@@ -1,20 +1,45 @@
+import { useDrop } from 'react-dnd';
+import {
+  Ship,
+  Swords,
+  Waves,
+  Sailboat,
+  Anchor,
+  Plane,
+  Landmark,
+  Shield,
+  Flame,
+  Car,
+  ShieldCheck
+} from 'lucide-react';
+
 export default function GameBoard({ board, onClick, terrainMap, showShips, unitTypes, orientation }) {
-  const unitImages = {
-    BATTLESHIP: '/images/battleship.png',
-    DESTROYER: '/images/destroyer.png',
-    SUBMARINE: '/images/submarine.png',
-    CRUISER: '/images/cruiser.png',
-    CARRIER: '/images/carrier.png',
-    BOMBER: '/images/bomber.png',
-    ARTILLERY: '/images/artillery.png',
-    INFANTRY: '/images/infantry.png',
-    TANK: '/images/tank.png',
-    VEHICLE: '/images/vehicle.png',
-    BUNKER: '/images/bunker.png'
+  const unitIcons = {
+    BATTLESHIP: <Ship size={28} />,
+    DESTROYER: <Swords size={28} />,
+    SUBMARINE: <Waves size={28} />,
+    CRUISER: <Sailboat size={28} />,
+    CARRIER: <Anchor size={28} />,
+    BOMBER: <Plane size={28} />,
+    ARTILLERY: <Landmark size={28} />,
+    INFANTRY: <Shield size={28} />,
+    TANK: <Flame size={28} />,
+    VEHICLE: <Car size={28} />,
+    BUNKER: <ShieldCheck size={28} />
   };
 
+  const [, drop] = useDrop({
+    accept: 'unit', // Accept units from UnitSelector
+    drop: (item, monitor) => {
+      // Item contains unit data (unitImages, unitTypes)
+      const { unitImages, unitTypes } = item;
+      // Handle drop logic here, e.g., set the dropped icon on the board
+      console.log('Item dropped:', unitImages, unitTypes);
+    },
+  });
+
   return (
-    <div className="grid grid-cols-10 gap-1 bg-white/10 p-4 rounded-lg shadow-2xl backdrop-blur-2xl border border-white/10">
+    <div ref={drop} className="grid grid-cols-10 gap-1 bg-white/10 p-4 rounded-lg shadow-2xl backdrop-blur-2xl border border-white/10">
       {board.flat().map((_, index) => {
         const x = Math.floor(index / board[0].length);
         const y = index % board[0].length;
@@ -32,9 +57,9 @@ export default function GameBoard({ board, onClick, terrainMap, showShips, unitT
             style={{
               backgroundImage: 
                 cell === 'miss' && terrain === 'water'
-                  ? "url('/images/black-water.jpg')" // Black water texture
+                  ? "url('/images/black-water.jpg')"
                   : cell === 'miss' && (terrain === 'land' || terrain === 'air')
-                  ? "url('/images/destroyed-land.jpg')" // Destroyed land texture
+                  ? "url('/images/destroyed-land.jpg')"
                   : terrain === 'water'
                   ? "url('/images/water.jpg')"
                   : terrain === 'land'
@@ -54,11 +79,9 @@ export default function GameBoard({ board, onClick, terrainMap, showShips, unitT
               />
             )}
             {showShips && typeof cell === 'string' && cell !== 'hit' && cell !== 'miss' && (
-              <img 
-                src={unitImages[cell.split('-')[0]]} 
-                alt={unitTypes[cell.split('-')[0]].name}
-                className={`absolute w-4/5 h-4/5 object-contain ${orientation === 'vertical' ? 'rotate-90' : ''}`}
-              />
+              <div className="absolute text-white drop-shadow-lg">
+                {unitIcons[cell.split('-')[0]]}
+              </div>
             )}
           </div>
         );

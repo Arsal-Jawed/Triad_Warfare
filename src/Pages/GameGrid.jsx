@@ -1,4 +1,3 @@
-// src/GameGrid.js
 import { useState, useEffect } from 'react';
 import GameBoard from '../Components/GameBoard';
 import UnitSelector from '../Components/UnitSelector';
@@ -6,94 +5,9 @@ import GameControls from '../Components/GameControls';
 import GameStatus from '../Components/GameStatus';
 import { GiCrossedSabres, GiTank, GiSpartanHelmet } from "react-icons/gi";
 import { useLocation } from 'react-router-dom';
+import { UNIT_TYPES } from '../Utils/Units';
 
 const BOARD_SIZE = 10;
-
-const UNIT_TYPES = {
-  BATTLESHIP: {
-    name: 'Battleship',
-    size: 4,
-    count: 1,
-    terrain: 'water',
-    color: 'bg-blue-600',
-  },
-  DESTROYER: {
-    name: 'Destroyer',
-    size: 3,
-    count: 2,
-    terrain: 'water',
-    color: 'bg-blue-500',
-  },
-  SUBMARINE: {
-    name: 'Submarine',
-    size: 3,
-    count: 1,
-    terrain: 'water',
-    color: 'bg-blue-400',
-  },
-  CRUISER: {
-    name: 'Cruiser',
-    size: 2,
-    count: 1,
-    terrain: 'water',
-    color: 'bg-blue-300',
-  },
-  CARRIER: {
-    name: 'Carrier',
-    size: 5,
-    count: 1,
-    terrain: 'water',
-    color: 'bg-blue-700',
-  },
-  BOMBER: {
-    name: 'Bomber',
-    size: 1,
-    count: 3,
-    terrain: 'air',
-    color: 'bg-gray-400',
-  },
-  ARTILLERY: {
-    name: 'Artillery',
-    size: 1,
-    count: 2,
-    terrain: 'land',
-    color: 'bg-green-600',
-  },
-  INFANTRY: {
-    name: 'Infantry',
-    size: 1,
-    count: 4,
-    terrain: 'land',
-    color: 'bg-amber-800',
-  },
-  TANK: {
-    name: 'Tank',
-    size: 2,
-    count: 2,
-    terrain: 'land',
-    color: 'bg-green-950',
-  },
-  VEHICLE: {
-    name: 'Light Vehicle',
-    size: 1,
-    count: 2,
-    terrain: 'land',
-    color: 'bg-amber-800',
-  },
-  BUNKER: {
-    name: 'Bunker',
-    size: 1,
-    count: 1,
-    terrain: 'land',
-    color: 'bg-amber-800',
-  },
-};
-
-const TERRAIN_TYPES = {
-  water: { name: 'Water', color: 'bg-blue-400', textColor: 'text-blue-800' },
-  land: { name: 'Land', color: 'bg-green-400', textColor: 'text-green-800' },
-  air: { name: 'Air', color: 'bg-gray-400', textColor: 'text-gray-800' },
-};
 
 function GameGrid() {
   const [gameState, setGameState] = useState('setup');
@@ -201,223 +115,223 @@ function GameGrid() {
   }
 
   function handleCellClick(x, y) {
-    if (gameState === 'setup') {
-      // If clicking on an existing unit, remove it first
-      if (playerBoard[x][y] !== null) {
-        const unitId = playerBoard[x][y];
-        const unitType = unitId.split('-')[0];
-        
-        // Create new board without this unit
-        const newBoard = playerBoard.map(row => row.map(cell => 
-          cell === unitId ? null : cell
-        ));
-        
-        setPlayerBoard(newBoard);
-        
-        // Mark unit as unplaced
-        setPlayerUnits(prevUnits => 
-          prevUnits.map(u => 
-            u.id === unitId ? { ...u, placed: false } : u
-          )
-        );
-        
-        setMessage(`${UNIT_TYPES[unitType].name} removed. Select it to place again.`);
-        return;
-      }
-      
-      // Proceed with new placement if a unit is selected
-      if (!selectedUnit) return;
-      
-      const unit = playerUnits.find(u => u.id === selectedUnit && !u.placed);
-      if (!unit) return;
-      
-      const newBoard = placeUnit(playerBoard, unit, x, y);
-      if (!newBoard) {
-        setMessage('Invalid placement!');
-        return;
-      }
-      
+  if (gameState === 'setup') {
+    if (playerBoard[x][y] !== null) {
+      const unitId = playerBoard[x][y];
+      const unitType = unitId.split('-')[0];
+
+      const newBoard = playerBoard.map(row => row.map(cell =>
+        cell === unitId ? null : cell
+      ));
+
       setPlayerBoard(newBoard);
-      
-      const updatedUnits = playerUnits.map(u => 
-        u.id === unit.id ? { ...u, placed: true } : u
+
+      setPlayerUnits(prevUnits =>
+        prevUnits.map(u =>
+          u.id === unitId ? { ...u, placed: false } : u
+        )
       );
-      setPlayerUnits(updatedUnits);
-      
-      if (updatedUnits.every(u => u.placed)) {
-        setMessage('All units placed. Ready to start!');
-      } else {
-        setMessage(`Place your ${unit.type} (${UNIT_TYPES[unit.type].name})`);
+
+      setMessage(`${UNIT_TYPES[unitType].name} removed. Select it to place again.`);
+      return;
+    }
+
+    if (!selectedUnit) return;
+
+    const unit = playerUnits.find(u => u.id === selectedUnit && !u.placed);
+    if (!unit) return;
+
+    const newBoard = placeUnit(playerBoard, unit, x, y);
+    if (!newBoard) {
+      setMessage('Invalid placement!');
+      return;
+    }
+
+    setPlayerBoard(newBoard);
+
+    const updatedUnits = playerUnits.map(u =>
+      u.id === unit.id ? { ...u, placed: true } : u
+    );
+    setPlayerUnits(updatedUnits);
+
+    if (updatedUnits.every(u => u.placed)) {
+      setMessage('All units placed. Ready to start!');
+    } else {
+      setMessage(`Place your ${unit.type} (${UNIT_TYPES[unit.type].name})`);
+    }
+
+    setSelectedUnit(null);
+  }
+
+  else if (gameState === 'player-turn') {
+    if (computerBoard[x][y] === 'hit' || computerBoard[x][y] === 'miss') {
+      setMessage('You already attacked this location!');
+      return;
+    }
+
+    const newComputerBoard = [...computerBoard];
+    let hitUnit = null;
+
+    for (const unit of computerUnits) {
+      if (newComputerBoard[x][y] === unit.id) {
+        hitUnit = unit;
+        newComputerBoard[x][y] = 'hit';
+        break;
       }
-      
-      setSelectedUnit(null);
-    } 
-    else if (gameState === 'player-turn') {
-      // Player's attack phase
-      if (computerBoard[x][y] === 'hit' || computerBoard[x][y] === 'miss') {
-        setMessage('You already attacked this location!');
-        return;
-      }
-      
-      const newComputerBoard = [...computerBoard];
-      let hitUnit = null;
-      
-      // Check if attack hit a unit
-      for (const unit of computerUnits) {
-        if (newComputerBoard[x][y] === unit.id) {
-          hitUnit = unit;
-          newComputerBoard[x][y] = 'hit';
-          break;
-        }
-      }
-      
-      if (!hitUnit) {
-        newComputerBoard[x][y] = 'miss';
-        setMessage('Miss!');
-      } else {
-        // Update hit count and check if sunk
-        const updatedComputerUnits = computerUnits.map(u => {
-          if (u.id === hitUnit.id) {
-            const newHits = u.hits + 1;
-            const sunk = newHits >= u.size;
-            if (sunk) setMessage(`You sunk the computer's ${UNIT_TYPES[u.type].name}!`);
-            return { ...u, hits: newHits, sunk };
-          }
-          return u;
-        });
-        
-        setComputerUnits(updatedComputerUnits);
-        if (!updatedComputerUnits.find(u => u.id === hitUnit.id).sunk) {
-          setMessage('Hit!');
-        }
-      }
-      
+    }
+
+    if (!hitUnit) {
+      newComputerBoard[x][y] = 'miss';
+      setMessage('Miss!');
       setComputerBoard(newComputerBoard);
-      
-      if (computerUnits.every(u => u.sunk)) {
-        setGameState('game-over');
-        setGameResult('won');
-        setShowPopup(true);
-        setMessage('You won! All enemy units destroyed!');
-      } else if (playerUnits.every(u => u.sunk)) {
-        setGameState('game-over');
-        setGameResult('lost');
-        setShowPopup(true);
-        setMessage('Game over! Enemy won!');
-      } else {
-        setGameState('computer-turn');
-        setTimeout(() => {
-          computerTurn();
-        }, 1000);
+      setGameState('computer-turn');
+      setTimeout(() => {
+        computerTurn();
+      }, 1000);
+      return;
+    }
+
+    const updatedComputerUnits = computerUnits.map(u => {
+      if (u.id === hitUnit.id) {
+        const newHits = u.hits + 1;
+        const sunk = newHits >= u.size;
+        if (sunk) setMessage(`You sunk the computer's ${UNIT_TYPES[u.type].name}!`);
+        return { ...u, hits: newHits, sunk };
+      }
+      return u;
+    });
+
+    setComputerUnits(updatedComputerUnits);
+    setComputerBoard(newComputerBoard);
+
+    const sunkCount = updatedComputerUnits.filter(u => u.sunk).length;
+
+    if (sunkCount >= 10) {
+      setGameState('game-over');
+      setGameResult('won');
+      setShowPopup(true);
+      setMessage('You won! enemy force destroyed!');
+    } else {
+      setMessage('Hit!');
+    }
+  }
+}
+
+
+ function computerTurn() {
+  let x, y;
+  const maxAttempts = 100;
+  let attempts = 0;
+
+  const hitCells = [];
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    for (let j = 0; j < BOARD_SIZE; j++) {
+      if (playerBoard[i][j] === 'hit') {
+        const alreadySunk = playerUnits.some(u => u.sunk && u.positions?.some(p => p.x === i && p.y === j));
+        if (!alreadySunk) hitCells.push({ x: i, y: j });
       }
     }
   }
 
-  function computerTurn() {
-    let x, y;
-    let attempts = 0;
-    const maxAttempts = 100;
-    
-    do {
-      x = Math.floor(Math.random() * BOARD_SIZE);
-      y = Math.floor(Math.random() * BOARD_SIZE);
-      attempts++;
-      
-      if (attempts > maxAttempts / 2) {
-        const hitCells = [];
-        for (let i = 0; i < BOARD_SIZE; i++) {
-          for (let j = 0; j < BOARD_SIZE; j++) {
-            if (playerBoard[i][j] === 'hit') {
-              hitCells.push({i, j});
-            }
-          }
-        }
-        
-        if (hitCells.length > 0) {
-          const {i, j} = hitCells[Math.floor(Math.random() * hitCells.length)];
-          const directions = [
-            {x: i-1, y: j}, {x: i+1, y: j},
-            {x: i, y: j-1}, {x: i, y: j+1}
-          ].filter(pos => 
-            pos.x >= 0 && pos.x < BOARD_SIZE && 
-            pos.y >= 0 && pos.y < BOARD_SIZE &&
-            (playerBoard[pos.x][pos.y] !== 'hit' && playerBoard[pos.x][pos.y] !== 'miss')
-          );
-          
-          if (directions.length > 0) {
-            const dir = directions[Math.floor(Math.random() * directions.length)];
-            x = dir.x;
-            y = dir.y;
-          }
-        }
-      }
-    } while (
-      attempts < maxAttempts && 
-      (playerBoard[x][y] === 'hit' || playerBoard[x][y] === 'miss')
+  if (hitCells.length > 0) {
+    const target = hitCells[Math.floor(Math.random() * hitCells.length)];
+    const directions = [
+      { x: target.x - 1, y: target.y },
+      { x: target.x + 1, y: target.y },
+      { x: target.x, y: target.y - 1 },
+      { x: target.x, y: target.y + 1 }
+    ];
+
+    const validTargets = directions.filter(pos =>
+      pos.x >= 0 && pos.x < BOARD_SIZE &&
+      pos.y >= 0 && pos.y < BOARD_SIZE &&
+      playerBoard[pos.x][pos.y] !== 'hit' &&
+      playerBoard[pos.x][pos.y] !== 'miss'
     );
-    
-    const newPlayerBoard = [...playerBoard];
-    let hitUnit = null;
-    
-    // Check if attack hit a unit
-    for (const unit of playerUnits) {
-      if (typeof newPlayerBoard[x][y] === 'string' && newPlayerBoard[x][y] === unit.id) {
-        hitUnit = unit;
-        newPlayerBoard[x][y] = 'hit';
-        break;
-      }
+
+    if (validTargets.length > 0) {
+      const choice = validTargets[Math.floor(Math.random() * validTargets.length)];
+      x = choice.x;
+      y = choice.y;
     }
-    
-    if (!hitUnit) {
-      newPlayerBoard[x][y] = 'miss';
-      setMessage('Computer missed! Your turn.');
-    } else {
-      // Update hit count and check if sunk
-      const updatedPlayerUnits = playerUnits.map(u => {
-        if (u.id === hitUnit.id) {
-          const newHits = u.hits + 1;
-          const sunk = newHits >= u.size;
-          if (sunk) setMessage(`Computer sunk your ${UNIT_TYPES[u.type].name}!`);
-          return { ...u, hits: newHits, sunk };
-        }
-        return u;
-      });
-      
-      setPlayerUnits(updatedPlayerUnits);
+  }
+
+  while (
+    (x === undefined || y === undefined || playerBoard[x][y] === 'hit' || playerBoard[x][y] === 'miss') &&
+    attempts < maxAttempts
+  ) {
+    x = Math.floor(Math.random() * BOARD_SIZE);
+    y = Math.floor(Math.random() * BOARD_SIZE);
+    attempts++;
+  }
+
+  const newPlayerBoard = [...playerBoard];
+  let hitUnit = null;
+
+  for (const unit of playerUnits) {
+    if (typeof newPlayerBoard[x][y] === 'string' && newPlayerBoard[x][y] === unit.id) {
+      hitUnit = unit;
+      newPlayerBoard[x][y] = 'hit';
+      break;
+    }
+  }
+
+  if (!hitUnit) {
+    newPlayerBoard[x][y] = 'miss';
+    setMessage('Computer missed! Your turn.');
+  } else {
+    const updatedPlayerUnits = playerUnits.map(u => {
+      if (u.id === hitUnit.id) {
+        const newHits = u.hits + 1;
+        const sunk = newHits >= u.size;
+        if (sunk) setMessage(`Computer sunk your ${UNIT_TYPES[u.type].name}!`);
+        return { ...u, hits: newHits, sunk };
+      }
+      return u;
+    });
+
+    setPlayerUnits(updatedPlayerUnits);
+
+      if (updatedPlayerUnits.every(u => u.sunk)) {
+        setGameState('game-over');
+        setMessage('Game over! Computer won!');
+        return;
+      }
+
       if (!updatedPlayerUnits.find(u => u.id === hitUnit.id).sunk) {
         setMessage('Computer hit your unit!');
       }
-    }
-    
-    setPlayerBoard(newPlayerBoard);
-    
-    if (playerUnits.every(u => u.sunk)) {
-      setGameState('game-over');
-      setMessage('Game over! Computer won!');
-    } else {
-      setGameState('player-turn');
-    }
+
   }
+
+  setPlayerBoard(newPlayerBoard);
+
+  if (playerUnits.every(u => u.sunk)) {
+    setGameState('game-over');
+    setMessage('Game over! Computer won!');
+  } else if (!hitUnit) {
+    setGameState('player-turn');
+  } else {
+    setTimeout(computerTurn, 1000);
+  }
+}
+
 
   function startGame() {
     let computerBoardWithUnits = initializeBoard();
     const updatedComputerUnits = [...computerUnits];
     
-    // Track available terrain spaces for each type
     const terrainSpaces = {
       water: [],
       land: [],
       air: []
     };
   
-    // Pre-calculate all valid positions for each terrain type
     for (let x = 0; x < BOARD_SIZE; x++) {
       for (let y = 0; y < BOARD_SIZE; y++) {
         terrainSpaces[terrainMap[x][y]].push({x, y});
       }
     }
-  
-    // Shuffle function for random placement
     const shuffleArray = (array) => {
       const newArray = [...array];
       for (let i = newArray.length - 1; i > 0; i--) {
@@ -438,13 +352,11 @@ function GameGrid() {
         const {x, y} = validSpaces[attempts - 1];
         const randomOrientation = Math.random() > 0.5 ? 'horizontal' : 'vertical';
         
-        // Temporarily set orientation for placement check
         const prevOrientation = orientation;
         setOrientation(randomOrientation);
         
         const newBoard = placeUnit(computerBoardWithUnits, unit, x, y);
         
-        // Restore original orientation
         setOrientation(prevOrientation);
         
         if (newBoard) {
@@ -452,7 +364,6 @@ function GameGrid() {
           unit.placed = true;
           placed = true;
           
-          // Remove occupied spaces from available positions
           if (randomOrientation === 'horizontal') {
             for (let i = 0; i < unit.size; i++) {
               terrainSpaces[unitTerrain] = terrainSpaces[unitTerrain].filter(
@@ -554,7 +465,6 @@ function GameGrid() {
             />
           </div>
           
-          {/* Enemy Territory - Military Panel */}
           <div className="flex-1 bg-black bg-opacity-70 p-4 rounded-lg border-2 border-red-700">
             <div className="flex items-center mb-4">
               <div className="w-3 h-3 bg-red-500 mr-2"></div>
@@ -568,6 +478,8 @@ function GameGrid() {
               terrainMap={terrainMap} 
               showShips={gameState === 'game-over'} 
               unitTypes={UNIT_TYPES}
+              selectedUnit={selectedUnit} 
+              onSelect={setSelectedUnit}
             />
           </div>
         </div>
@@ -609,22 +521,17 @@ function GameGrid() {
 
           {showPopup && (
             <div className="fixed inset-0 z-50 flex items-center justify-center">
-              {/* Blurred Backdrop */}
               <div 
                 className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300"
                 onClick={() => setShowPopup(false)}
               />
-              
-              {/* Popup Container */}
               <div className={`
                 relative bg-gray-900/95 border-2 border-yellow-500/80 rounded-xl p-8 max-w-md w-full mx-4
                 shadow-2xl shadow-yellow-500/20
                 transition-all duration-300
                 ${showPopup ? 'animate-fade-in' : 'animate-fade-out'}
               `}>
-                {/* Popup Content */}
                 <div className="text-center">
-                  {/* Title */}
                   <h2 className={`
                     text-3xl font-bold mb-6 
                     ${gameResult === 'won' ? 'text-green-400' : 'text-red-400'}
@@ -632,15 +539,12 @@ function GameGrid() {
                   `}>
                     {gameResult === 'won' ? 'MISSION ACCOMPLISHED!' : 'MISSION FAILED!'}
                   </h2>
-                  
-                  {/* Message */}
                   <p className="text-gray-200 mb-8 text-lg">
                     {gameResult === 'won' 
                       ? 'Your strategic dominance is unmatched!' 
                       : 'Enemy forces have prevailed this time!'}
                   </p>
                   
-                  {/* Button */}
                   <button
                     onClick={() => {
                       resetGame();
@@ -660,7 +564,6 @@ function GameGrid() {
                   </button>
                 </div>
                 
-                {/* Decorative Elements */}
                 {gameResult === 'won' && (
                   <div className="absolute -top-4 -right-4 w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
                     <span className="text-3xl">🏆</span>
